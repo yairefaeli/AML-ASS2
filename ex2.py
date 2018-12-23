@@ -21,13 +21,12 @@ class smc_perceptron:
 class structured_perceptron:
     def __init__(self, num_epochs, features_len, learning_rate):
         self.num_epoch = num_epochs
-        self.w = np.zeros(26 * features_len)
+        self.w = np.zeros((26,features_len))
         self.learning_rate = learning_rate
     
     def phi(self, x, y):
-        zeros = np.zeros(26 * 128)
-        z = int(y * 26)
-        zeros[z:z + 128] = x
+        zeros = np.zeros((26,128))
+        zeros[y] = x
         return zeros
 
     def train(self, training_set):
@@ -39,16 +38,35 @@ class structured_perceptron:
 
     def find_argmax(self, x):
         temp_y = -1
-        temp_max = -1
+        temp_max = [[-1 for i in range(26)] for j in range(26)]
         for i in range(26):
-            temp_value = np.dot(self.w, self.phi(x, i))
-            if temp_value > temp_max:
+            temp_value = np.dot(self.w, np.transpose(self.phi(x, i)))
+            if self.max_array(temp_value, temp_max):
                 temp_max = temp_value
                 temp_y = i
         return temp_y
 
+    def find_argmax_good(self, x):
+        array = []
+        for i in range(26):
+            array.append(np.dot(self.w, np.transpose(self.phi(x, i))))
+        value = array.index(np.argmax(array))
+        return value
+
+
+    def max_array(self, temp_value,temp_max):
+        comp = 0
+        #print(len(temp_value))
+        for i in range(len(temp_value)):
+            for j in range(len(temp_value)):
+                if temp_max[i][j] > temp_value[i][j] :
+                    comp += 1
+        if comp > len(temp_max)**2 / 2:
+            return 0
+        return 1
+
 def predict(model, x):
-        return np.argmax(np.dot(model.w, x))
+    return np.argmax(np.dot(model.w, x))
 
 def read_training_set():
     x_set = []
