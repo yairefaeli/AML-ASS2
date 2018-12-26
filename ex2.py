@@ -3,7 +3,6 @@ from sklearn.utils import shuffle
 
 classes = ['a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z']
 
-
 class smc_perceptron:
     def __init__(self, num_epochs, features_len, learning_rate):
         self.num_epochs = num_epochs
@@ -18,55 +17,54 @@ class smc_perceptron:
                     self.w[y_hat] += np.dot(self.learning_rate, np.dot(-1 ,xi))
                     self.w[yi] += np.dot(self.learning_rate, np.dot(1 ,xi))
 
+    def predict(self, x):
+        return np.argmax(np.dot(self.w, x))
+
 class structured_perceptron:
     def __init__(self, num_epochs, features_len, learning_rate):
         self.num_epoch = num_epochs
-        self.w = np.zeros((26,features_len))
+        self.w = np.zeros(26 * features_len)
         self.learning_rate = learning_rate
     
     def phi(self, x, y):
-        zeros = np.zeros((26,128))
-        zeros[y] = x
+        zeros = np.zeros(26 * 128)
+        z = int(y * 128)
+        zeros[z:z + 128] = x
         return zeros
 
     def train(self, training_set):
         for epoch in range(1, self.num_epoch):
             for xi, yi in training_set:
                 y_hat = self.find_argmax(xi)
-                #print(y_hat)
-                self.w += (self.phi(xi, yi) - self.phi(xi, y_hat))
+                self.w = self.w + (self.phi(xi, yi) - self.phi(xi, y_hat))
 
     def find_argmax(self, x):
-        temp_y = -1
-        temp_max = [[-1 for i in range(26)] for j in range(26)]
-        for i in range(26):
-            temp_value = np.dot(self.w, np.transpose(self.phi(x, i)))
-            if self.max_array(temp_value, temp_max):
-                temp_max = temp_value
-                temp_y = i
-        return temp_y
+        return np.argmax([np.dot(self.w, self.phi(x, y)) for y in range(26)])
 
-    def find_argmax_good(self, x):
-        array = []
-        for i in range(26):
-            array.append(np.dot(self.w, np.transpose(self.phi(x, i))))
-        value = array.index(np.argmax(array))
-        return value
+    def predict(self, x):
+        return self.find_argmax(x)
 
+class dps_perceptron:
+    def __init__(self, num_epochs, features_len):
+        self.num_epochs = num_epochs
+        self.features_len = features_len
+        self.d_s = np.zeros((128, 26))
+        self.d_phi = np.zeros((128, 26))
 
-    def max_array(self, temp_value,temp_max):
-        comp = 0
-        #print(len(temp_value))
-        for i in range(len(temp_value)):
-            for j in range(len(temp_value)):
-                if temp_max[i][j] > temp_value[i][j] :
-                    comp += 1
-        if comp > len(temp_max)**2 / 2:
-            return 0
-        return 1
+    def train(self, training_set):
+         for epoch in range(1, self.num_epoch):
+            for xi, yi in training_set:
+                y_hat = self.find_argmax(xi)
+                self.w = self.w + (self.phi(xi, yi) - self.phi(xi, y_hat))
 
-def predict(model, x):
-    return np.argmax(np.dot(model.w, x))
+    def phi(self, x, prev_y, y):
+        None
+
+    def find_argmax(self, x):
+        return np.argmax([np.dot(self.w, self.phi(x, y)) for y in range(26)])
+
+    def predict(self, x):
+        return self.find_argmax(x)
 
 def read_training_set():
     x_set = []
@@ -82,7 +80,6 @@ def read_training_set():
     x_set, y_set = shuffle(x_set, y_set)
     training_set = list(zip(x_set,y_set))
     return training_set
-
 
 def read_test_set():
     x_set = []
@@ -100,11 +97,10 @@ def read_test_set():
 def predict_all(test_set, model):
     correct_answers = 0
     for xi, yi in test_set:
-        pred = predict(model, xi)
+        pred = model.predict(xi)
         if pred == yi:
             correct_answers += 1
     print("The accuracy is: " + str((float(correct_answers) / len(test_set)) * 100) + "%")
-
 
 print("Reading the training set...\n")
 
@@ -114,7 +110,7 @@ features_length = len(temp_x)
 print("Training the model...\n")
 
 #model = smc_perceptron(20, features_length, 0.01) # standart multiclass perceptron
-model = structured_perceptron(20, features_length, 0.01) # structured multiclass perceptron
+model = structured_perceptron(10, features_length, 0.01) # structured multiclass perceptron
 
 model.train(training_set)
 
